@@ -1,7 +1,5 @@
-import time
-import hashlib
 import string
-import random
+import secrets
 from datetime import date
 from flask import jsonify, Blueprint, request
 
@@ -41,7 +39,8 @@ def get_booking_checkout_lines(reference: str):
         return {'error': 'Cannot get checkout lines without payment'}, 422
 
     try:
-        checkout_session_id = request.args.get("checkout_session_id")
+        # On utilise l'ID Stripe enregistré en base, pas celui envoyé par le client
+        checkout_session_id = booking.stripe_checkout_session_id
         return jsonify(get_checkout_lines(checkout_session_id))
     except:
         return {'error': 'Invalid checkout session ID'}, 404
@@ -88,11 +87,10 @@ def new_booking():
     booking_price = room.price * booking_duration_in_days
 
     # Generate random booking reference
-    booking_reference = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+    booking_reference = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
 
-    # Generate random confirmation secret
-    random_string = str(int(time.time())) # get current timestamp in seconds
-    checkout_confirmation_secret = hashlib.sha512(random_string.encode('utf-8')).hexdigest() # hash it with safe sha512
+    # Generate random confirmation secret (aléatoire sûr, plus basé sur l'heure)
+    checkout_confirmation_secret = secrets.token_hex(32)
 
     # Create Stripe checkout session
     checkout_session = create_checkout(

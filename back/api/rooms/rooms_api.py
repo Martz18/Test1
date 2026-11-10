@@ -15,7 +15,8 @@ def list_rooms():
 
    if "category" in request.args:
       category = request.args["category"]
-      rooms = Room.query.filter(text(f"category = '{category}'")).all()
+      # Requête préparée : la valeur est passée en paramètre (:category), jamais collée dans le SQL
+      rooms = Room.query.filter(text("category = :category")).params(category=category).all()
    else:
       rooms = Room.query.all()
 
